@@ -1,0 +1,15 @@
+$ bash src/ex3-6.sh pack_demo
+묶음 파일: pack_demo.tar
+file0.txt
+file1.txt
+file2.txt
+file3.txt
+file4.txt
+복원한 파일:
+file0.txt
+file1.txt
+file2.txt
+file3.txt
+file4.txt
+비교 결과: 5개 파일 모두 일치
+$ 

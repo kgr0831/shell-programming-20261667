@@ -1,0 +1,254 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>셸프로그래밍 20261667 김가람</title><style>
+body{font-family:"Apple SD Gothic Neo",Arial,sans-serif;max-width:1100px;margin:40px auto;padding:0 24px;color:#111;line-height:1.6}h1{font-size:28px}h2{margin-top:48px;font-size:22px}pre{background:#f4f4f4;padding:18px;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.6 Menlo,"Apple SD Gothic Neo",monospace}img{display:block;max-width:100%;height:auto;border:0;border-radius:0}section{margin-top:40px}@media print{section{break-before:page}pre{font-size:10px}}
+</style><h1>셸프로그래밍</h1><p>20261667 김가람</p><section><h2>ex3-0.sh</h2><img src="screenshots/ex3-0.png" alt=""><pre>#!/bin/bash
+if [ &quot;$#&quot; -gt 1 ]; then
+    echo &quot;사용법: $0 [설정 파일]&quot; &gt;&amp;2
+    exit 1
+fi
+config=${1:-./.bashrc}
+setting=&#x27;export MYENV=&quot;Bash Ready&quot;&#x27;
+touch &quot;$config&quot; || exit 1
+if grep -Fxq &quot;$setting&quot; &quot;$config&quot;; then
+    echo &quot;등록 상태: 이미 저장됨&quot;
+else
+    printf &#x27;%s\n&#x27; &quot;$setting&quot; &gt;&gt; &quot;$config&quot; || exit 1
+    echo &quot;등록 상태: 새로 저장됨&quot;
+fi
+source &quot;$config&quot; || exit 1
+printf &#x27;현재 셸: MYENV=%s\n&#x27; &quot;$MYENV&quot;
+bash -c &#x27;printf &quot;자식 셸: MYENV=%s\n&quot; &quot;$MYENV&quot;&#x27;
+unset MYENV
+printf &#x27;해제 후: MYENV=%s\n&#x27; &quot;${MYENV-미설정}&quot;
+</pre></section><section><h2>ex3-1.sh</h2><img src="screenshots/ex3-1.png" alt=""><pre>#!/bin/bash
+if [ &quot;$#&quot; -ne 2 ]; then
+    echo &quot;사용법: $0 &lt;정수&gt; &lt;정수&gt;&quot; &gt;&amp;2
+    exit 1
+fi
+for number in &quot;$@&quot;; do
+    if ! [[ $number =~ ^-?[0-9]{1,9}$ ]]; then
+        echo &quot;입력 오류: 부호를 제외한 9자리 이하 정수만 가능합니다.&quot; &gt;&amp;2
+        exit 1
+    fi
+done
+decimal() {
+    case &quot;$1&quot; in
+        -*) echo &quot;$((-10#${1#-}))&quot; ;;
+        *) echo &quot;$((10#$1))&quot; ;;
+    esac
+}
+left=$(decimal &quot;$1&quot;)
+right=$(decimal &quot;$2&quot;)
+printf &#x27;입력: %d, %d\n&#x27; &quot;$left&quot; &quot;$right&quot;
+printf &#x27;더하기: %d\n&#x27; &quot;$((left + right))&quot;
+printf &#x27;빼기:   %d\n&#x27; &quot;$((left - right))&quot;
+printf &#x27;곱하기: %d\n&#x27; &quot;$((left * right))&quot;
+if (( right == 0 )); then
+    echo &quot;나누기: 계산 불가 (분모 0)&quot;
+else
+    printf &#x27;나누기: %d (정수 몫)\n&#x27; &quot;$((left / right))&quot;
+fi
+</pre></section><section><h2>ex3-2.sh</h2><img src="screenshots/ex3-2.png" alt=""><pre>#!/bin/bash
+command -v bc &gt;/dev/null || { echo &quot;bc가 필요합니다.&quot; &gt;&amp;2; exit 1; }
+if (( $# &gt; 0 )); then
+    values=(&quot;$@&quot;)
+else
+    read -r -p &quot;x 입력 (공백으로 구분): &quot; -a values
+fi
+if (( ${#values[@]} &lt; 2 )); then
+    echo &quot;입력 오류: x를 2개 이상 입력하세요.&quot; &gt;&amp;2
+    exit 1
+fi
+for x in &quot;${values[@]}&quot;; do
+    if ! [[ $x =~ ^-?([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]]; then
+        echo &quot;입력 오류: $x&quot; &gt;&amp;2
+        exit 1
+    fi
+done
+echo &quot;y = 0.5 * x^2&quot;
+printf &#x27;%-10s %s\n&#x27; &#x27;x&#x27; &#x27;y&#x27;
+for x in &quot;${values[@]}&quot;; do
+    y=$(printf &#x27;scale=2; ((%s) * (%s) / 2)\n&#x27; &quot;$x&quot; &quot;$x&quot; | bc)
+    case &quot;$y&quot; in .*) y=&quot;0$y&quot; ;; esac
+    printf &#x27;%-10s %s\n&#x27; &quot;$x&quot; &quot;$y&quot;
+done
+</pre></section><section><h2>ex3-3.sh</h2><img src="screenshots/ex3-3.png" alt=""><pre>#!/bin/bash
+if (( $# &lt; 2 )); then
+    echo &quot;사용법: $0 &lt;점수1&gt; &lt;점수2&gt; ...&quot; &gt;&amp;2
+    exit 1
+fi
+command -v bc &gt;/dev/null || { echo &quot;bc가 필요합니다.&quot; &gt;&amp;2; exit 1; }
+for mark in &quot;$@&quot;; do
+    if ! [[ $mark =~ ^[0-9]{1,3}$ ]] || (( 10#$mark &gt; 100 )); then
+        echo &quot;입력 오류: 점수는 0~100의 정수입니다.&quot; &gt;&amp;2
+        exit 1
+    fi
+done
+grade_of() {
+    if (( $1 &gt;= 90 )); then echo A; else echo B; fi
+}
+total=0
+subject=0
+printf &#x27;과목\t점수\t등급\n&#x27;
+for mark in &quot;$@&quot;; do
+    mark=$((10#$mark))
+    subject=$((subject + 1))
+    total=$((total + mark))
+    printf &#x27;%d\t%d\t%s\n&#x27; &quot;$subject&quot; &quot;$mark&quot; &quot;$(grade_of &quot;$mark&quot;)&quot;
+done
+mean=$(printf &#x27;scale=2; %d / %d\n&#x27; &quot;$total&quot; &quot;$subject&quot; | bc)
+printf &#x27;합계: %d / 과목 수: %d\n&#x27; &quot;$total&quot; &quot;$subject&quot;
+printf &#x27;평균: %s / 평균 등급: %s\n&#x27; &quot;$mean&quot; &quot;$(grade_of &quot;$((total / subject))&quot;)&quot;
+</pre></section><section><h2>ex3-4.sh</h2><img src="screenshots/ex3-4.png" alt=""><pre>#!/bin/bash
+command -v bc &gt;/dev/null || { echo &quot;bc가 필요합니다.&quot; &gt;&amp;2; exit 1; }
+marks=()
+summary() {
+    total=0
+    for mark in &quot;${marks[@]}&quot;; do total=$((total + mark)); done
+    size=${#marks[@]}
+    mean=$(printf &#x27;scale=2; %d / %d\n&#x27; &quot;$total&quot; &quot;$size&quot; | bc)
+    if (( total &gt;= 90 * size )); then letter=A; else letter=B; fi
+}
+while :; do
+    echo &quot;[1] 추가 [2] 목록 [3] 평균 [4] 등급 [5] 종료&quot;
+    read -r -p &quot;선택: &quot; option || break
+    case &quot;$option&quot; in
+        1)
+            read -r -p &quot;점수: &quot; mark || break
+            if ! [[ $mark =~ ^[0-9]{1,3}$ ]] || (( 10#$mark &gt; 100 )); then
+                echo &quot;입력 오류: 0~100의 정수를 입력하세요.&quot;
+                continue
+            fi
+            marks+=(&quot;$((10#$mark))&quot;)
+            printf &#x27;저장 완료 (%d과목)\n&#x27; &quot;${#marks[@]}&quot;
+            ;;
+        2|3|4)
+            if (( ${#marks[@]} == 0 )); then
+                echo &quot;저장된 점수가 없습니다.&quot;
+                continue
+            fi
+            case &quot;$option&quot; in
+                2) printf &#x27;점수 목록: %s\n&#x27; &quot;${marks[*]}&quot; ;;
+                3) summary; printf &#x27;평균: %s\n&#x27; &quot;$mean&quot; ;;
+                4) summary; printf &#x27;평균 등급: %s (%s점)\n&#x27; &quot;$letter&quot; &quot;$mean&quot; ;;
+            esac
+            ;;
+        5) echo &quot;성적 관리를 마칩니다.&quot;; break ;;
+        *) echo &quot;입력 오류: 1~5 중에서 선택하세요.&quot; ;;
+    esac
+done
+</pre></section><section><h2>ex3-5.sh</h2><img src="screenshots/ex3-5.png" alt=""><pre>#!/bin/bash
+list_entries() {
+    echo &quot;목록 조회 시작&quot;
+    echo &quot;list_entries 함수 실행&quot;
+    ls &quot;$@&quot;
+    code=$?
+    echo &quot;목록 조회 끝&quot;
+    return &quot;$code&quot;
+}
+if (( $# &gt; 0 )); then
+    list_entries &quot;$@&quot;
+    exit $?
+fi
+platform=$(uname -s)
+printf &#x27;운영체제: %s\n&#x27; &quot;$platform&quot;
+while :; do
+    echo &quot;[1] 사용자 [2] CPU [3] 메모리 [4] 디스크 [5] 파일 [6] 종료&quot;
+    read -r -p &quot;선택: &quot; option || break
+    case &quot;$option&quot; in
+        1)
+            printf &#x27;사용자: &#x27;; whoami
+            printf &#x27;UID: &#x27;; id -u
+            printf &#x27;기본 그룹: &#x27;; id -gn
+            ;;
+        2)
+            if [ &quot;$platform&quot; = Darwin ]; then
+                LC_ALL=C top -l 1 -n 0 | awk &#x27;/CPU usage/ {print}&#x27;
+            else
+                LC_ALL=C top -b -n 1 | sed -n &#x27;1,5p&#x27;
+            fi
+            ;;
+        3)
+            if [ &quot;$platform&quot; = Darwin ]; then vm_stat | sed -n &#x27;1,6p&#x27;
+            else free -h; fi
+            ;;
+        4) df -h . ;;
+        5) list_entries -l ;;
+        6) echo &quot;조회를 마칩니다.&quot;; break ;;
+        *) echo &quot;입력 오류: 1~6 중에서 선택하세요.&quot; ;;
+    esac
+done
+</pre></section><section><h2>ex3-6.sh</h2><img src="screenshots/ex3-6.png" alt=""><pre>#!/bin/bash
+set -e
+if (( $# &gt; 1 )); then echo &quot;사용법: $0 [새 폴더]&quot; &gt;&amp;2; exit 1; fi
+folder=${1:-files}
+case &quot;$folder&quot; in &#x27;&#x27;|-*) echo &quot;폴더 이름을 확인하세요.&quot; &gt;&amp;2; exit 1 ;; esac
+archive=&quot;$folder.tar&quot;
+if [ -e &quot;$folder&quot; ] || [ -L &quot;$folder&quot; ] || [ -e &quot;$archive&quot; ] || [ -L &quot;$archive&quot; ]; then
+    echo &quot;기존 결과가 있습니다. 새 이름을 지정하세요.&quot; &gt;&amp;2
+    exit 1
+fi
+mkdir -p &quot;$folder/original&quot; &quot;$folder/restored&quot;
+for ((n=0; n&lt;5; n++)); do
+    printf &#x27;sample number %d\n&#x27; &quot;$n&quot; &gt; &quot;$folder/original/file$n.txt&quot;
+done
+tar -cf &quot;$archive&quot; -C &quot;$folder/original&quot; file0.txt file1.txt file2.txt file3.txt file4.txt
+printf &#x27;묶음 파일: %s\n&#x27; &quot;$archive&quot;
+tar -tf &quot;$archive&quot;
+tar -xf &quot;$archive&quot; -C &quot;$folder/restored&quot;
+echo &quot;복원한 파일:&quot;
+ls -1 &quot;$folder/restored&quot;
+diff -r &quot;$folder/original&quot; &quot;$folder/restored&quot;
+echo &quot;비교 결과: 5개 파일 모두 일치&quot;
+</pre></section><section><h2>ex3-7.sh</h2><img src="screenshots/ex3-7.png" alt=""><pre>#!/bin/bash
+set -e
+if (( $# &gt; 1 )); then echo &quot;사용법: $0 [새 폴더]&quot; &gt;&amp;2; exit 1; fi
+folder=${1:-files}
+case &quot;$folder&quot; in &#x27;&#x27;|-*) echo &quot;폴더 이름을 확인하세요.&quot; &gt;&amp;2; exit 1 ;; esac
+if [ -e &quot;$folder&quot; ] || [ -L &quot;$folder&quot; ]; then
+    echo &quot;기존 폴더가 있습니다. 새 이름을 지정하세요.&quot; &gt;&amp;2
+    exit 1
+fi
+mkdir -p &quot;$folder&quot;
+for ((n=0; n&lt;5; n++)); do
+    printf &#x27;linked sample %d\n&#x27; &quot;$n&quot; &gt; &quot;$folder/file$n.txt&quot;
+    mkdir &quot;$folder/file$n&quot;
+    ln -s &quot;../file$n.txt&quot; &quot;$folder/file$n/file$n.txt&quot;
+done
+echo &quot;생성 목록:&quot;
+ls -1 &quot;$folder&quot;
+echo &quot;링크 경로:&quot;
+for ((n=0; n&lt;5; n++)); do
+    printf &#x27;file%d/file%d.txt -&gt; %s\n&#x27; &quot;$n&quot; &quot;$n&quot; &quot;$(readlink &quot;$folder/file$n/file$n.txt&quot;)&quot;
+    cmp &quot;$folder/file$n.txt&quot; &quot;$folder/file$n/file$n.txt&quot;
+done
+printf &#x27;첫 번째 링크의 내용: &#x27;
+cat &quot;$folder/file0/file0.txt&quot;
+echo &quot;비교 결과: 링크 5개 모두 정상&quot;
+</pre></section><section><h2>ex3-8.sh</h2><img src="screenshots/ex3-8.png" alt=""><pre>#!/bin/bash
+if (( $# != 2 )) || [ -z &quot;$1&quot; ] || [ -z &quot;$2&quot; ]; then
+    echo &quot;사용법: $0 &lt;이름&gt; &lt;전화번호 또는 생일&gt;&quot; &gt;&amp;2
+    exit 1
+fi
+case &quot;$1$2&quot; in
+    *$&#x27;\n&#x27;*|*$&#x27;\r&#x27;*|*$&#x27;\t&#x27;*) echo &quot;줄바꿈과 탭은 입력할 수 없습니다.&quot; &gt;&amp;2; exit 1 ;;
+esac
+printf &#x27;%s\t%s\n&#x27; &quot;$1&quot; &quot;$2&quot; &gt;&gt; DB.txt || exit 1
+printf &#x27;추가: %s | %s\n&#x27; &quot;$1&quot; &quot;$2&quot;
+</pre></section><section><h2>ex3-9.sh</h2><img src="screenshots/ex3-9.png" alt=""><pre>#!/bin/bash
+if (( $# != 1 )) || [ -z &quot;$1&quot; ]; then
+    echo &quot;사용법: $0 &lt;검색어&gt;&quot; &gt;&amp;2
+    exit 1
+fi
+if [ ! -f DB.txt ]; then
+    echo &quot;DB.txt가 없습니다. 먼저 데이터를 추가하세요.&quot; &gt;&amp;2
+    exit 1
+fi
+printf &#x27;검색어: %s\n&#x27; &quot;$1&quot;
+grep -iF -- &quot;$1&quot; DB.txt
+result=$?
+case &quot;$result&quot; in
+    0) ;;
+    1) echo &quot;일치하는 기록이 없습니다.&quot; ;;
+    *) echo &quot;DB.txt 읽기 오류&quot; &gt;&amp;2; exit &quot;$result&quot; ;;
+esac
+</pre></section></html>

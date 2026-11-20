@@ -1,0 +1,11 @@
+$ bash src/ex3-0.sh
+등록 상태: 새로 저장됨
+현재 셸: MYENV=Bash Ready
+자식 셸: MYENV=Bash Ready
+해제 후: MYENV=미설정
+$ bash src/ex3-0.sh
+등록 상태: 이미 저장됨
+현재 셸: MYENV=Bash Ready
+자식 셸: MYENV=Bash Ready
+해제 후: MYENV=미설정
+$ 
